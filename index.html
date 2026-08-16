@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Myhem's Lyric Downloader (Mldl) - Minimal word-synced Apple Music TTML, Kugou KRC, and LRC lyrics downloader for complete albums or tracks.">
+  <title>Myhem's Lyric Downloader (Mldl)</title>
+  
+  <!-- Fonts (Cascadia Code / CaskaydiaCove Nerd Font) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cascadia+Code:ital,wght@0,400;0,600;0,700;1,400;1,700&family=Cascadia+Mono:ital,wght@0,400;0,600;0,700;1,400;1,700&display=swap" rel="stylesheet">
+  
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- GitHub Pages / HTTPS Proxy Notice Banner -->
+  <div id="proxy-alert-banner" class="proxy-alert-banner" style="display: none;">
+    <div class="proxy-alert-content">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <span><strong>GitHub Pages Notice:</strong> Kugou APIs require a free Cloudflare Worker CORS proxy to work on HTTPS.</span>
+      <button type="button" class="btn btn-sm btn-primary" id="banner-setup-proxy-btn">Setup Free Proxy (1 min)</button>
+    </div>
+  </div>
+
+  <!-- Navigation Bar -->
+  <header class="navbar">
+    <a href="#" class="brand">
+      <div class="brand-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+      </div>
+      <span class="brand-title">Myhem's Lyric Downloader</span>
+      <span class="brand-badge">Mldl</span>
+    </a>
+
+    <div class="nav-actions">
+      <button type="button" class="btn btn-outline btn-sm" id="open-settings-btn" title="Configure CORS Proxy & Custom Naming">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+        Settings & Proxy
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="app-container">
+    
+    <!-- Hero Title -->
+    <section class="hero-section">
+      <h1 class="hero-title">Myhem's Lyric Downloader</h1>
+      <p class="hero-subtitle">Word-synced Apple Music <strong>.ttml</strong> and Kugou <strong>.krc</strong> lyrics for entire albums or individual tracks.</p>
+    </section>
+
+    <!-- Search Card -->
+    <div class="search-card">
+      
+      <!-- Search Mode Tabs -->
+      <div class="tab-header" role="tablist">
+        <button type="button" class="tab-btn active" id="tab-album-btn" role="tab" aria-selected="true">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+          Album Search
+        </button>
+        <button type="button" class="tab-btn" id="tab-song-btn" role="tab" aria-selected="false">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+          Single Song Search
+        </button>
+      </div>
+
+      <!-- Album Search Form (2 Inputs: Album Name + Artist Name) -->
+      <form id="album-search-form" class="search-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="album-name-input" class="form-label">Album Name (or Kugou Album ID)</label>
+            <input type="text" id="album-name-input" class="input-control" placeholder="e.g. 25, Random Access Memories, After Hours" required autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label for="album-artist-input" class="form-label">Artist Name (Optional)</label>
+            <input type="text" id="album-artist-input" class="input-control" placeholder="e.g. Adele, Daft Punk, The Weeknd" autocomplete="off">
+          </div>
+          <div style="display: flex; align-items: flex-end;">
+            <button type="submit" class="btn btn-primary" id="album-search-submit">
+              <span id="search-spinner" class="spinner" style="display: none;"></span>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              Search Album
+            </button>
+          </div>
+        </div>
+      </form>
+
+      <!-- Single Song Search Form (2 Inputs: Song Title + Artist Name) -->
+      <form id="song-search-form" class="search-form" style="display: none;">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="song-title-input" class="form-label">Song Title</label>
+            <input type="text" id="song-title-input" class="input-control" placeholder="e.g. Hello, Get Lucky, Blinding Lights" required autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label for="song-artist-input" class="form-label">Artist Name (Optional)</label>
+            <input type="text" id="song-artist-input" class="input-control" placeholder="e.g. Adele, Daft Punk, The Weeknd" autocomplete="off">
+          </div>
+          <div style="display: flex; align-items: flex-end;">
+            <button type="submit" class="btn btn-primary" id="song-search-submit">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              Search Song
+            </button>
+          </div>
+        </div>
+      </form>
+
+      <!-- Target Formats Selector -->
+      <div class="formats-section">
+        <div class="formats-title">Output Formats to Download</div>
+        <div class="format-pills">
+          <label class="format-pill active">
+            <input type="checkbox" class="format-checkbox" data-format="ttml" checked>
+            <span>.ttml (Apple Music Word-Synced)</span>
+          </label>
+          <label class="format-pill active">
+            <input type="checkbox" class="format-checkbox" data-format="krc" checked>
+            <span>.krc (Kugou Word-Synced)</span>
+          </label>
+          <label class="format-pill">
+            <input type="checkbox" class="format-checkbox" data-format="enhanced-lrc">
+            <span>Enhanced .lrc (Word-Synced)</span>
+          </label>
+          <label class="format-pill">
+            <input type="checkbox" class="format-checkbox" data-format="standard-lrc">
+            <span>Standard .lrc (Line-Synced)</span>
+          </label>
+          <label class="format-pill">
+            <input type="checkbox" class="format-checkbox" data-format="srt">
+            <span>.srt (Subtitle)</span>
+          </label>
+          <label class="format-pill">
+            <input type="checkbox" class="format-checkbox" data-format="json">
+            <span>.json (Raw Timings)</span>
+          </label>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Error State Box -->
+    <div id="error-state" class="error-card" style="display: none; margin-bottom: 1.5rem;">
+      <svg class="error-icon" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <h3>Search Notice</h3>
+      <p id="error-message">Error message description</p>
+      <button type="button" class="btn btn-primary btn-sm" id="error-proxy-btn" style="margin-top: 0.85rem; display: none;">Configure Cloudflare Worker</button>
+    </div>
+
+    <!-- Dynamic Content Container -->
+    <div id="results-container">
+      
+      <!-- Initial Empty State -->
+      <div id="empty-state" class="empty-card">
+        <svg class="empty-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        <h3>Ready to Download Lyrics</h3>
+        <p>Enter the album name and artist name above and click <strong>Search Album</strong> to find matching albums.</p>
+      </div>
+
+      <!-- Album Candidates View (Choose between matched albums) -->
+      <div id="album-candidates-view" style="display: none;">
+        <h3 style="margin-bottom: 1rem; font-size: 1.15rem; font-weight: 700;">Matching Albums</h3>
+        <div id="album-candidates-list" class="album-candidates-grid">
+          <!-- Dynamically rendered album candidate cards -->
+        </div>
+      </div>
+
+      <!-- Album Tracklist View (Visible when album is selected) -->
+      <div id="album-view" class="album-view" style="display: none;">
+        
+        <!-- Album Header Bar -->
+        <div class="album-header-card">
+          <div class="album-header-info">
+            <button type="button" class="btn btn-outline btn-sm" id="back-to-albums-btn" style="margin-bottom: 0.75rem;">
+              ← Back to Albums
+            </button>
+            <h2 id="album-title" class="album-title-text">Album Title</h2>
+            <div id="album-artist" class="album-artist-text">Artist Name</div>
+            <div id="album-meta-info" class="album-meta-text">Release: 2023 • Tracks: 12</div>
+          </div>
+          <div class="album-header-actions">
+            <span id="selected-count-badge" class="selected-badge">0 selected</span>
+            <button type="button" class="btn btn-primary" id="download-album-zip-btn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" y2="3"/></svg>
+              Download Album Lyrics (.ZIP)
+            </button>
+          </div>
+        </div>
+
+        <!-- Tracklist Table -->
+        <div class="tracklist-container">
+          <table class="tracklist-table">
+            <thead>
+              <tr>
+                <th style="width: 40px;">
+                  <input type="checkbox" id="select-all-tracks" checked title="Select / Deselect All">
+                </th>
+                <th>#</th>
+                <th>Track Title</th>
+                <th>Duration</th>
+                <th style="text-align: right;">Action</th>
+              </tr>
+            </thead>
+            <tbody id="tracklist-tbody">
+              <!-- Dynamically rendered -->
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+
+      <!-- Single Song Results View -->
+      <div id="song-results-view" style="display: none;">
+        <h3 style="margin-bottom: 1rem; font-size: 1.15rem; font-weight: 700;">Search Results</h3>
+        <div id="song-results-list" class="song-results-grid">
+          <!-- Dynamically rendered song cards -->
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Crypto Donation Section -->
+    <section class="donation-section">
+      <div class="donation-card">
+        <div class="donation-header">
+          <div class="donation-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v12M15 9.5a2.5 2.5 0 0 0-5 0c0 4 5 2 5 6a2.5 2.5 0 0 1-5 0"/></svg>
+          </div>
+          <div>
+            <h3 class="donation-title">Donate / Support Project</h3>
+            <p class="donation-subtitle">If you find this lyric downloader useful, support the project via crypto:</p>
+          </div>
+        </div>
+
+        <div class="crypto-grid">
+          <!-- Bitcoin (BTC) -->
+          <div class="crypto-item">
+            <div class="crypto-meta">
+              <span class="crypto-badge btc">BTC</span>
+              <span class="crypto-label">Bitcoin</span>
+            </div>
+            <div class="crypto-address-row">
+              <code class="crypto-address" id="crypto-btc">bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh</code>
+              <button type="button" class="btn btn-sm btn-outline copy-crypto-btn" data-target="crypto-btc" title="Copy Bitcoin Address">
+                Copy
+              </button>
+            </div>
+          </div>
+
+          <!-- Ethereum / USDT / EVM (ETH) -->
+          <div class="crypto-item">
+            <div class="crypto-meta">
+              <span class="crypto-badge eth">ETH / USDT</span>
+              <span class="crypto-label">Ethereum / EVM</span>
+            </div>
+            <div class="crypto-address-row">
+              <code class="crypto-address" id="crypto-eth">0x71C0a8451f28b49A9e31C92c20aE8f8303f8F6b2</code>
+              <button type="button" class="btn btn-sm btn-outline copy-crypto-btn" data-target="crypto-eth" title="Copy Ethereum Address">
+                Copy
+              </button>
+            </div>
+          </div>
+
+          <!-- Solana (SOL) -->
+          <div class="crypto-item">
+            <div class="crypto-meta">
+              <span class="crypto-badge sol">SOL</span>
+              <span class="crypto-label">Solana</span>
+            </div>
+            <div class="crypto-address-row">
+              <code class="crypto-address" id="crypto-sol">7kXYa3N8P1Uf9D7H2V6nLm4J8tE3qQwR1sZ5vB9xK4mP</code>
+              <button type="button" class="btn btn-sm btn-outline copy-crypto-btn" data-target="crypto-sol" title="Copy Solana Address">
+                Copy
+              </button>
+            </div>
+          </div>
+
+          <!-- Litecoin (LTC) / Monero (XMR) -->
+          <div class="crypto-item">
+            <div class="crypto-meta">
+              <span class="crypto-badge ltc">LTC</span>
+              <span class="crypto-label">Litecoin</span>
+            </div>
+            <div class="crypto-address-row">
+              <code class="crypto-address" id="crypto-ltc">ltc1q9x7h2v6nlm4j8te3qqwr1sz5vb9xk4mp3a3n8p</code>
+              <button type="button" class="btn btn-sm btn-outline copy-crypto-btn" data-target="crypto-ltc" title="Copy Litecoin Address">
+                Copy
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Settings Modal Dialog -->
+  <dialog id="settings-modal">
+    <div class="modal-header">
+      <div class="modal-title">Settings & CORS Proxy</div>
+      <button type="button" class="btn btn-outline btn-sm btn-icon-only" id="close-settings-btn">✕</button>
+    </div>
+    <div class="modal-body">
+      
+      <!-- Custom Filename Naming Format -->
+      <div class="settings-section">
+        <label for="naming-preset-select" class="settings-label">Custom Filename Naming Format</label>
+        <select id="naming-preset-select" class="input-control" style="margin-bottom: 0.65rem;">
+          <option value="{track}. {title}">Track Number. Song Title (e.g. 01. Hello)</option>
+          <option value="{artist} - {title}">Artist - Song Title (e.g. Adele - Hello)</option>
+          <option value="{track} - {artist} - {title}">Track - Artist - Song Title (e.g. 01 - Adele - Hello)</option>
+          <option value="{title}">Song Title Only (e.g. Hello)</option>
+          <option value="custom">Custom Pattern...</option>
+        </select>
+        
+        <input type="text" id="naming-template-input" class="input-control" placeholder="{track}. {title}" style="margin-bottom: 0.5rem;">
+        
+        <!-- Tag buttons for fast customization -->
+        <div class="tag-helpers">
+          <span style="font-size: 0.78rem; color: var(--text-muted);">Insert tag:</span>
+          <button type="button" class="tag-btn" data-tag="{track}">{track}</button>
+          <button type="button" class="tag-btn" data-tag="{title}">{title}</button>
+          <button type="button" class="tag-btn" data-tag="{artist}">{artist}</button>
+          <button type="button" class="tag-btn" data-tag="{album}">{album}</button>
+        </div>
+
+        <div class="naming-preview-box">
+          <span class="preview-tag-title">Example Output:</span>
+          <code id="naming-preview-label" class="preview-tag-code">01. Hello.ttml</code>
+        </div>
+      </div>
+
+      <hr style="border: 0; border-top: 1px solid var(--border-glass); margin: 1.35rem 0;">
+
+      <!-- Proxy Configuration -->
+      <div class="settings-section">
+        <label for="proxy-select" class="settings-label">CORS & HTTPS Proxy Mode</label>
+        <select id="proxy-select" class="input-control">
+          <option value="custom">Cloudflare Worker Proxy (Required for GitHub Pages)</option>
+          <option value="local">Local Python Server (/api/proxy for localhost)</option>
+          <option value="direct">Direct (Requires Browser CORS Extension)</option>
+        </select>
+      </div>
+
+      <!-- Cloudflare Worker Setup Guide Box -->
+      <div class="worker-guide-card">
+        <div class="worker-guide-header">
+          <strong>⚡ How to Deploy Your Free Cloudflare Worker (1 Minute)</strong>
+        </div>
+        <ol class="worker-guide-steps">
+          <li>Log in to <a href="https://dash.cloudflare.com" target="_blank" rel="noopener noreferrer" style="color: #38bdf8; text-decoration: underline;">dash.cloudflare.com</a> $\rightarrow$ <strong>Workers & Pages</strong> $\rightarrow$ <strong>Create Worker</strong>.</li>
+          <li>
+            Click <strong>Deploy</strong>, then click <strong>Edit Code</strong>, paste the worker script:
+            <div style="margin: 0.4rem 0;">
+              <button type="button" class="btn btn-sm btn-outline" id="copy-worker-code-btn">
+                📋 Copy Worker Script (worker.js)
+              </button>
+            </div>
+          </li>
+          <li>Click <strong>Deploy</strong>, copy your worker URL (e.g. <code>https://my-proxy.yourname.workers.dev</code>), and paste it below:</li>
+        </ol>
+      </div>
+
+      <!-- Custom Cloudflare Worker Row -->
+      <div class="settings-section" id="custom-proxy-row" style="margin-top: 1rem;">
+        <label for="custom-worker-input" class="settings-label">Your Cloudflare Worker URL</label>
+        <input type="url" id="custom-worker-input" class="input-control" placeholder="https://my-proxy.yourname.workers.dev">
+        <p class="settings-help">Once entered, your URL is saved automatically in your browser storage.</p>
+      </div>
+
+      <!-- Test Proxy Connectivity Button -->
+      <div class="proxy-test-container">
+        <button type="button" class="btn btn-outline btn-sm" id="test-proxy-btn">
+          Test Proxy Connection
+        </button>
+        <span id="proxy-test-status" class="proxy-status"></span>
+      </div>
+
+    </div>
+  </dialog>
+
+  <!-- Lyric Preview Modal Dialog -->
+  <dialog id="preview-modal" class="preview-modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="preview-song-title">Song Title</div>
+        <div class="preview-subheading" id="preview-song-artist">Artist Name</div>
+      </div>
+      <button type="button" class="btn btn-outline btn-sm btn-icon-only" id="close-preview-btn">✕</button>
+    </div>
+    <div class="modal-body">
+      
+      <!-- Preview Tabs -->
+      <div class="preview-tabs" id="preview-tabs">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <!-- Karaoke View Pane -->
+      <div id="preview-pane-karaoke" class="karaoke-container">
+        <!-- Lines and words rendered dynamically -->
+      </div>
+
+      <!-- Raw Text View Pane -->
+      <div id="preview-pane-text" style="display: none;">
+        <textarea id="preview-text-content" class="preview-textarea" readonly></textarea>
+      </div>
+
+      <!-- Playback Scrubber Bar -->
+      <div class="preview-playback-bar">
+        <button type="button" class="btn btn-primary btn-sm" id="preview-play-btn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Play Preview
+        </button>
+        <input type="range" id="preview-scrubber" class="preview-scrubber" min="0" max="100000" value="0">
+        <span id="preview-time-label" class="preview-time">0:00 / 0:00</span>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-outline btn-sm" id="preview-copy-btn">Copy Text</button>
+      <button type="button" class="btn btn-primary btn-sm" id="preview-download-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" y2="3"/></svg>
+        Download Lyric File
+      </button>
+    </div>
+  </dialog>
+
+  <!-- Batch Download Progress Modal Dialog -->
+  <dialog id="progress-modal">
+    <div class="modal-header">
+      <div class="modal-title" id="progress-title">Downloading Lyrics...</div>
+    </div>
+    <div class="modal-body">
+      
+      <div class="progress-bar-track">
+        <div class="progress-bar-fill" id="progress-bar-fill"></div>
+      </div>
+
+      <div class="progress-status-row">
+        <span id="progress-current-status">Initializing...</span>
+        <span id="progress-percentage">0%</span>
+      </div>
+
+      <div class="progress-log-list" id="progress-log-list">
+        <!-- Real-time log entries -->
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-outline btn-sm" id="progress-cancel-btn">Cancel Download</button>
+    </div>
+  </dialog>
+
+  <!-- Scripts -->
+  <script src="vendor/pako.min.js"></script>
+  <script src="vendor/jszip.min.js"></script>
+  <script src="js/krc-decoder.js"></script>
+  <script src="js/converters.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
